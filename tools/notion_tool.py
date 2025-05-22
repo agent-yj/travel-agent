@@ -1,11 +1,10 @@
 import json
 import os
-from typing import Annotated, Type
+from typing import Type
 
 import requests
 from dotenv import load_dotenv
 from langchain_core.tools import BaseTool
-from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 load_dotenv()
@@ -19,51 +18,9 @@ headers = {
 }
 
 
-@tool
-async def create_notion_page(
-        title: Annotated[str, "생성할 페이지의 타이틀"],
-        content: Annotated[str, "생성할 페이지의 내용"]
-) -> str:
-    """Create Notion Page with title, content."""
-    data = {
-        "parent": {"page_id": f"{NOTION_PARENT_PAGE_ID}"},
-        "properties": {
-            "title": {
-                "title": [
-                    {
-                        "type": "text",
-                        "text": {
-                            "content": title
-                        }
-                    }
-                ]
-            }
-        },
-        "children": [
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [
-                        {
-                            "type": "text",
-                            "text": {
-                                "content": content
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-
-    res = requests.post("https://api.notion.com/v1/pages", headers=headers, data=json.dumps(data))
-    return res.json()['url']
-
-
 class CreatePageInput(BaseModel):
-    title: str = Field(..., description="생성할 페이지의 타이틀")
-    content: str = Field(..., description="생성할 페이지의 내용")
+    title: str = Field(..., description="생성할 노션 페이지의 타이틀")
+    content: str = Field(..., description="생성할 노션 페이지의 내용")
 
 
 class CreatePageTool(BaseTool):
