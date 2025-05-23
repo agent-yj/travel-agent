@@ -11,7 +11,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from nodes.node_factory import create_node
 from nodes.supervisor import create_supervisor_node
-from prompts import chat_prompt
+from prompts import chat_prompt, notion_prompt, web_search_prompt
 from prompts.calendar import calendar_prompt
 from tools import web_search_tools, notion_tools, calendar_tools
 
@@ -28,13 +28,15 @@ supervisor_node = create_supervisor_node(llm_openai)
 web_search_node = create_node(
     name="web_searcher",
     llm=llm_google_ai,
-    tools=web_search_tools
+    tools=web_search_tools,
+    system_message=web_search_prompt
 )
 
 notion_node = create_node(
     name="notion_assistant",
     llm=llm_google_ai,
-    tools=notion_tools
+    tools=notion_tools,
+    system_message=notion_prompt
 )
 
 calendar_node = create_node(
