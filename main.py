@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import MessagesState, START, StateGraph
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from nodes.node_factory import create_node
 from nodes.supervisor import create_supervisor_node
@@ -14,33 +16,37 @@ from prompts.calendar import calendar_prompt
 from tools import web_search_tools, notion_tools, calendar_tools
 
 load_dotenv()
-MODEL_GPT_4O = "gpt-4o"
-llm = ChatOpenAI(model_name=MODEL_GPT_4O)
 
-supervisor_node = create_supervisor_node(llm)
+OPENAI_MODEL = os.environ["OPENAI_MODEL"]
+GOOGLE_AI_MODEL = os.environ["GOOGLE_AI_MODEL"]
+
+llm_openai = ChatOpenAI(model_name=OPENAI_MODEL)
+llm_google_ai = ChatGoogleGenerativeAI(model=GOOGLE_AI_MODEL)
+
+supervisor_node = create_supervisor_node(llm_openai)
 
 web_search_node = create_node(
     name="web_searcher",
-    llm=llm,
+    llm=llm_google_ai,
     tools=web_search_tools
 )
 
 notion_node = create_node(
     name="notion_assistant",
-    llm=llm,
+    llm=llm_google_ai,
     tools=notion_tools
 )
 
 calendar_node = create_node(
     name="calendar_assistant",
-    llm=llm,
+    llm=llm_openai,
     tools=calendar_tools,
     system_message=calendar_prompt
 )
 
 chat_node = create_node(
     name="chat_assistant",
-    llm=llm,
+    llm=llm_openai,
     tools=[],
     system_message=chat_prompt
 )
@@ -110,8 +116,13 @@ def main():
         # 응답 처리
         with st.spinner("에이전트가 응답을 생성중입니다."):
             loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(process_user_message())
+
+            try:
+                asyncio.set_event_loop(loop)
+                asyncio.run(process_user_message())
+            except Exception as e:
+                st.error(f"에이전트 실행 중 오류가 발생했습니다: {str(e)}")
+
             loop.close()
 
         # 응답 완료 후 대기 OFF + 새로고침

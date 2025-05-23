@@ -7,7 +7,7 @@ from prompts import supervisor_system_prompt
 
 class Router(TypedDict):
     """The agent to route to next. If no further action is needed, route to FINISH."""
-    next: List[Literal["web_searcher", "notion_assistant", "calendar_assistant", "chat_assistant", "FINISH"]]
+    next: Literal["web_searcher", "notion_assistant", "calendar_assistant", "chat_assistant", "FINISH"]
 
 
 def create_supervisor_node(llm):
@@ -17,16 +17,12 @@ def create_supervisor_node(llm):
         messages = [{"role": "system", "content": supervisor_system_prompt}] + state["messages"]
         response = llm.with_structured_output(Router).invoke(messages)
 
-        gotos = response["next"]
-        print(f"Gotos: {gotos}")
-        next_agent = gotos.pop(0)
+        next_agent = response["next"]
         print(f"Next Agent: {next_agent}")
 
-        if next == "FINISH":
-            goto = END
-        else:
-            goto = next_agent
+        if not next_agent or next_agent == "FINISH":
+            return Command(goto=END)
 
-        return Command(goto=goto)
+        return Command(goto=next_agent)
 
     return supervisor_node

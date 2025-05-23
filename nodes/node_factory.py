@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal, Annotated, Sequence
+from typing import TypedDict, Literal, Annotated, Sequence, List
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.graph import add_messages, MessagesState, StateGraph

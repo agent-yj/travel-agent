@@ -1,11 +1,12 @@
-# travel-agent
-- 여행 계획을 세우고 여행 계획을 노션 페이지로 생성할 수도 있으며 구글 캘린더에 일정을 등록해주는 에이전트입니다.
+# 프로젝트 개요
+이 프로젝트는 LangGraph를 기반으로 한 여행 계획 에이전트입니다. 사용자가 여행 목적지, 기간 등의 정보를 입력하면 에이전트는 다음과 같은 작업을 수행합니다:
+- 웹 검색: 구글 검색을 활용하여 여행 정보를 검색하여 여행 계획을 세웁니다.
+- 일정 관리: 구글 캘린더에 일정을 등록합니다.
+- 노션 연동: 여행 계획을 노션 페이지로 생성합니다.
+- 대화형 인터페이스: 사용자와의 대화를 통해 여행 계획을 수립합니다.
 
-## 실행을 위한 준비 작업
-- 에이전트를 실행 해보기 위해서 몇가지 사전 준비 작업이 필요합니다.
-
-### .env 파일에 필요한 API Key 생성
-- 먼저 .env.example 파일을 복사하여 .env 파일을 생성합니다.
+# 실행을 위한 준비 작업
+에이전트를 실행 해보기 위해서 몇가지 사전 준비 작업이 필요합니다.
 
 #### OpenAI API Key 발급
 1. [OpenAI 플랫폼](https://platform.openai.com/) 접속
@@ -54,4 +55,29 @@
 9. 처음 실행할 때 캘린더 액세스에 대한 권한 요청을 허용해주는 창이 뜨게 되고, 허용해주면 Google Calendar API를 사용할 수 있게 됩니다.
 
 
+# 에이전트 그래프 구조
+![graph](./resources/graph.png)
 
+
+# 실행 방법
+1. clone repository:
+> git clone https://github.com/agent-yj/travel-agent.git  
+> cd travel-agent
+
+2. env.example 파일을 .env로 복사하고, 필요한 API 키를 설정합니다:  
+> cp .env.example .env 
+
+3. 필요한 Python 패키지를 설치합니다:
+> python3.11 -m venv venv  
+> source ./venv/bin/activate  
+> pip install -r requirements.txt
+
+4. Streamlit 애플리케이션을 실행합니다:
+> streamlit run main.py
+
+5. 브라우저에서 http://localhost:8501에 접속하여 대화를 시작합니다.
+
+
+# 실행 결과
+![여행계획세워줌](./resources/screenshot1.png)
+![노션 페이지 생성하고 캘린더 등록해줌](./resources/screenshot2.png)
