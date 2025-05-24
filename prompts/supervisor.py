@@ -25,7 +25,7 @@ supervisor_system_prompt = (
     - 단순히 인사한 경우 → ["chat_assistant", "FINISH"]
     - 사용자가 여행 계획만 요청한 경우 → ["web_searcher", "FINISH"]
 
-     
+    응답은 한국어로 하도록 지시하세요.
     작업이 완료되었거나 더 이상 수행할 작업이 없을 경우, 반드시 FINISH로 종료하세요.
     """
 )

@@ -1,9 +1,8 @@
+import logging
 from typing import Literal, TypedDict, List
-
 from langgraph.constants import END
 from langgraph.graph import MessagesState
 from langgraph.types import Command
-
 from prompts import supervisor_system_prompt
 
 
@@ -21,7 +20,7 @@ def create_supervisor_node(llm):
 
         nexts = response["next"]
         next_agent = nexts.pop(0)
-        print(f"next agent: {next_agent}, remaining: {nexts}")
+        logging.info(f"next agent: {next_agent}, remaining: {nexts}")
 
         if next_agent == "FINISH":
             goto = END
@@ -31,4 +30,3 @@ def create_supervisor_node(llm):
         return Command(goto=goto)
 
     return supervisor_node
-

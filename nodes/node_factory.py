@@ -1,6 +1,6 @@
-from typing import TypedDict, Literal, Annotated, Sequence, List
+from typing import TypedDict, Literal, Annotated, Sequence
 
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage, AIMessage
 from langgraph.graph import add_messages, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import Command
@@ -40,7 +40,7 @@ def create_node(name: str, llm, tools, system_message=None):
         return Command(
             update={
                 "messages": [
-                    HumanMessage(content=result["messages"][-1].content, name=name)
+                    AIMessage(content=result["messages"][-1].content, name=name)
                 ]
             },
             goto="supervisor"

@@ -1,13 +1,13 @@
 import asyncio
 import os
+import logging
 
 import streamlit as st
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import MessagesState, START, StateGraph
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+from langgraph.graph import MessagesState, START, StateGraph
 
 from nodes.node_factory import create_node
 from nodes.supervisor import create_supervisor_node
@@ -15,19 +15,24 @@ from prompts import chat_prompt, notion_prompt, web_search_prompt
 from prompts.calendar import calendar_prompt
 from tools import web_search_tools, notion_tools, calendar_tools
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
 load_dotenv()
 
 OPENAI_MODEL = os.environ["OPENAI_MODEL"]
 GOOGLE_AI_MODEL = os.environ["GOOGLE_AI_MODEL"]
 
-llm_openai = ChatOpenAI(model_name=OPENAI_MODEL)
+llm_openai = ChatOpenAI(model_name=OPENAI_MODEL, temperature=0.1)
 llm_google_ai = ChatGoogleGenerativeAI(model=GOOGLE_AI_MODEL)
 
 supervisor_node = create_supervisor_node(llm_openai)
 
 web_search_node = create_node(
     name="web_searcher",
-    llm=llm_google_ai,
+    llm=llm_openai,
     tools=web_search_tools,
     system_message=web_search_prompt
 )
@@ -48,7 +53,7 @@ calendar_node = create_node(
 
 chat_node = create_node(
     name="chat_assistant",
-    llm=llm_openai,
+    llm=llm_google_ai,
     tools=[],
     system_message=chat_prompt
 )
@@ -61,39 +66,38 @@ builder.add_node("notion_assistant", notion_node)
 builder.add_node("calendar_assistant", calendar_node)
 builder.add_node("chat_assistant", chat_node)
 
-memory = MemorySaver()
-graph = builder.compile(checkpointer=memory)
+graph = builder.compile()
 
 config = {"configurable": {"thread_id": "1"}}
 
 
 async def process_user_message():
     state = {"messages": st.session_state.message_objects}
+
     async for event in graph.astream(state, config=config):
         for node_name, value in event.items():
+            logging.info(f"value: {value}")
+
             if value is None:
                 continue
 
             latest = value["messages"][-1]
-            st.session_state.message_objects.append(latest)
-            st.session_state.chat_history.append({
-                "role": "assistant",
-                "content": latest.content
-            })
+            if latest:
+                st.session_state.message_objects.append(latest)
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": latest.content
+                })
 
-            with st.chat_message("assistant"):
-                st.markdown(latest.content)
+                with st.chat_message("assistant"):
+                    st.markdown(latest.content)
 
 
 def main():
     st.set_page_config(page_title="여행 에이전트", page_icon="✈️")
 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-    if "message_objects" not in st.session_state:
-        st.session_state.message_objects = []
-    if "waiting_for_ai" not in st.session_state:
-        st.session_state.waiting_for_ai = False
+    st.session_state.setdefault("chat_history", [])
+    st.session_state.setdefault("message_objects", [])
 
     st.title("여행 에이전트")
     st.caption("여행 계획을 세워드립니다!")
@@ -103,17 +107,16 @@ def main():
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
 
-    user_input = st.chat_input("대화를 입력해주세요!", disabled=st.session_state.waiting_for_ai)
+    # 사용자 입력
+    user_input = st.chat_input("대화를 입력해주세요!")
 
     if user_input:
+        # 입력을 세션에 저장
         st.session_state.chat_history.append({"role": "user", "content": user_input})
         st.session_state.message_objects.append(HumanMessage(content=user_input))
 
         with st.chat_message("user"):
             st.markdown(user_input)
-
-        # 응답 대기
-        st.session_state.waiting_for_ai = True
 
         # 응답 처리
         with st.spinner("에이전트가 응답을 생성중입니다."):
@@ -121,14 +124,12 @@ def main():
 
             try:
                 asyncio.set_event_loop(loop)
-                asyncio.run(process_user_message())
+                loop.run_until_complete(process_user_message())
             except Exception as e:
                 st.error(f"에이전트 실행 중 오류가 발생했습니다: {str(e)}")
 
             loop.close()
 
-        # 응답 완료 후 대기 OFF + 새로고침
-        st.session_state.waiting_for_ai = False
         st.rerun()
 
 
